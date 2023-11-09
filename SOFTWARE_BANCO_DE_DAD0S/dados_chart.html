@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DADOS TEMPERATURA</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        #aviso.flash {
+            animation: flash 1s infinite alternate;
+        }
+
+        @keyframes flash {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="grafico1"></div>
+    <div id="aviso" style="display: none; background-color: red; color: white; text-align: center; padding: 10px; position: fixed; top: 0; left: 0; width: 100%;">
+        Temperatura superior a 15°C!<br>
+        <span id="timestamp" style="font-size: 18px;"></span>
+        <button onclick="openEventWindow()">Ver Detalhes</button>
+    </div>
+    <div id="grafico2"></div>
+
+    <script>
+        fetch('s.csv')  // Substitua 'seuarquivo.csv' pelo nome do seu arquivo CSV
+            .then(response => response.text())
+            .then(data => {
+                var lines = data.split('\n');
+                var header = lines[0].split('\t');  // Use \t como delimitador
+
+                // Crie objetos para armazenar os dados
+                var timestamps = [];
+                var rtdValues = [];
+                var avisoExibido = false;
+
+                // Processa as linhas do CSV
+                for (var i = 1; i < lines.length; i++) {
+                    var currentLine = lines[i].split('\t');
+
+                    // Extrai os valores de timestamp e rtd ºC
+                    var timestamp = currentLine[0];
+                    var rtdValue = parseFloat(currentLine[1].replace(',', '.')); // Converte vírgula para ponto
+
+                    timestamps.push(timestamp);
+                    rtdValues.push(rtdValue);
+
+                    // Verifique se a temperatura é maior que 15°C e exiba o aviso
+                    if (!avisoExibido && rtdValue > 15) {
+                        exibirAviso(timestamp);
+                        avisoExibido = true;
+                    }
+                }
+
+                // Crie um gráfico Plotly (gráfico 1)
+                var trace1 = {
+                    x: timestamps,
+                    y: rtdValues,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'RTD ºC'
+                };
+
+                var layout1 = {
+                    title: 'DADOS TEMPERATURA',
+                    xaxis: { title: 'TIMESTAMP' },
+                    yaxis: { title: 'RTD ºC' }
+                };
+
+                var data1 = [trace1];
+
+                Plotly.newPlot('grafico1', data1, layout1);
+
+                // Crie um segundo gráfico Plotly (gráfico 2)
+                var trace2 = {
+                    x: timestamps,
+                    y: rtdValues,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'RTD ºC'
+                };
+
+                var layout2 = {
+                    title: 'Gráfico 2',
+                    xaxis: { title: 'TIMESTAMP' },
+                    yaxis: { title: 'RTD ºC' }
+                };
+
+                var data2 = [trace2];
+
+                Plotly.newPlot('grafico2', data2, layout2);
+            });
+
+        function exibirAviso(timestamp) {
+            const aviso = document.getElementById("aviso");
+            aviso.style.display = "block";
+            aviso.classList.add("flash");
+
+            const timestampElement = document.getElementById("timestamp");
+            timestampElement.textContent = "Data: " + getMonthYear(timestamp);
+        }
+
+        function getMonthYear(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString("en-US", { month: "long", year: "numeric" });
+        }
+
+        function openEventWindow() {
+            // You can customize the content of the new window here
+            const eventDetails = `Evento de Temperatura Superior a 15°C\nData: ${getMonthYear(timestamp)}`;
+
+            // Open a new window with event details
+            const eventWindow = window.open('', 'Event Details', 'width=400,height=300');
+            eventWindow.document.write(eventDetails);
+        }
+    </script>
+</body>
+</html>
