@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DADOS TEMPERATURA</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        #aviso.flash {
+            animation: flash 1s infinite alternate;
+        }
+
+        @keyframes flash {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="grafico"></div>
+    <div id="aviso" style="display: none; background-color: red; color: white; text-align: center; padding: 10px; position: fixed; top: 0; left: 0; width: 100%;">
+        Temperatura superior a 15°C!
+    </div>
+
+    <script>
+        fetch('s.csv')  // Substitua 'seuarquivo.csv' pelo nome do seu arquivo CSV
+            .then(response => response.text())
+            .then(data => {
+                var lines = data.split('\n');
+                var header = lines[0].split('\t');  // Use \t como delimitador
+
+                // Crie objetos para armazenar os dados
+                var timestamps = [];
+                var rtdValues = [];
+                var avisoExibido = false;
+
+                // Processa as linhas do CSV
+                for (var i = 1; i < lines.length; i++) {
+                    var currentLine = lines[i].split('\t');
+
+                    // Extrai os valores de timestamp e rtd ºC
+                    var timestamp = currentLine[0];
+                    var rtdValue = parseFloat(currentLine[1].replace(',', '.')); // Converte vírgula para ponto
+
+                    timestamps.push(timestamp);
+                    rtdValues.push(rtdValue);
+
+                    // Verifique se a temperatura é maior que 15°C e exiba o aviso
+                    if (!avisoExibido && rtdValue > 15) {
+                        exibirAviso();
+                        avisoExibido = true;
+                    }
+                }
+
+                // Crie um gráfico Plotly
+                var trace = {
+                    x: timestamps,
+                    y: rtdValues,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'RTD ºC'
+                };
+
+                var layout = {
+                    title: 'DADOS TEMPERATURA',
+                    xaxis: { title: 'TIMESTAMP' },
+                    yaxis: { title: 'RTD ºC' }
+                };
+
+                var data = [trace];
+
+                Plotly.newPlot('grafico', data, layout);
+            });
+
+        function exibirAviso() {
+            const aviso = document.getElementById("aviso");
+            aviso.style.display = "block";
+            aviso.classList.add("flash");
+        }
+    </script>
+</body>
+</html>
